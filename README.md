@@ -18,6 +18,12 @@ sudo /data/tailscale/login.sh trailblazer
 
 30초 안에 로그인이 끝나지 않아 명령이 timeout으로 종료돼도, 표시된 로그인 링크에서 인증 후 다시 상태를 확인할 수 있습니다. 기존 로그인 상태는 재설치 시 유지합니다. API 키나 Tailscale 로그인 키는 이 저장소에 포함하지 않습니다.
 
+## Tailscale 기기 목록 · 이전 기기 삭제
+
+**[Tailscale 기기 목록 열기](https://login.tailscale.com/admin/machines)**
+
+로그인 후 사용하지 않는 기기의 이름·IP·마지막 접속 시간을 확인하고, 해당 항목의 **⋯ → Remove → 확인**으로 삭제합니다. 현재 사용 중인 기기와 혼동하지 마세요. 초기화 후 재등록했다면 이전 항목만 삭제하면 됩니다.
+
 ## 팩토리리셋 후 재설치와 기기 중복 등록
 
 팩토리리셋 후 openpilot을 설치하고 인터넷에 연결한 다음, 위 설치 한 줄을 다시 실행하면 됩니다. `/data/tailscale/state`가 남아 있다면 기존 인증 정보를 재사용합니다. 이 폴더까지 삭제됐다면 `sudo /data/tailscale/login.sh trailblazer`로 다시 인증해야 합니다.
