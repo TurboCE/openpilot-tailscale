@@ -161,6 +161,25 @@ def install(assets):
                 os.replace(str(stage / name), str(release / name))
                 meta[name + "_sha256"] = digest(release / name)
             atomic_write(manifest_path, json.dumps(meta, indent=2))
+    # AGNOS 18.4 can ship nft frontends with a kernel lacking nf_tables.
+    # Select legacy tools for this service only, after read-only probes.
+    compat = BASE / "compat"
+    compat.mkdir(exist_ok=True)
+    for name in ("iptables", "ip6tables"):
+        target = compat / name
+        legacy = shutil.which(name + "-legacy")
+        default = shutil.which(name)
+        if (default and legacy and
+                run(default, "-t", "filter", "-S", check=False).returncode != 0 and
+                run(legacy, "-t", "filter", "-S", check=False).returncode == 0):
+            if target.is_symlink():
+                target.unlink()
+            if target.exists():
+                raise RuntimeError("Unexpected compatibility file: " + str(target))
+            target.symlink_to(legacy)
+            print("Using service-local legacy firewall frontend:", name)
+        elif target.is_symlink():
+            target.unlink()
     (BASE / "bin").mkdir(exist_ok=True)
     (BASE / "state").mkdir(mode=0o700, exist_ok=True)
     (BASE / "state").chmod(0o700)
@@ -209,7 +228,7 @@ def main(assets):
             install(assets)
 
 try:
-    main({'login.sh': '#!/usr/bin/env bash\nset -eu\nif (( EUID != 0 )); then\n  exec sudo -n /usr/bin/bash "$0" "$@"\nfi\nhost_name=${1:-$(hostname)}\n# Ordinary OpenSSH stays in use. Do not change DNS or accept subnet routes.\nexec /data/tailscale/bin/tailscale --socket=/run/tailscale/tailscaled.sock up --accept-dns=false --accept-routes=false --hostname="$host_name" --timeout=30s\n', 'start.sh': '#!/usr/bin/env bash\n# Background bootstrap: openpilot must not wait for network setup.\nset -eu\nif (( EUID != 0 )); then\n  exec sudo -n /usr/bin/bash "$0" "$@"\nfi\nexec 9>/run/openpilot-tailscale-bootstrap.lock\nflock -n 9 || exit 0\nsystemctl link --runtime /data/tailscale/tailscaled.service /data/tailscale/tailscaled-delay.timer\nsystemctl start --no-block tailscaled-delay.timer\n', 'tailscaled-delay.timer': '[Unit]\nDescription=Start Tailscale at boot +90 seconds\n\n[Timer]\nOnBootSec=90s\nAccuracySec=1s\nUnit=tailscaled.service\n', 'tailscaled.service': '[Unit]\nDescription=Tailscale for openpilot\nAfter=network.target NetworkManager.service\nWants=network.target\n\n[Service]\nType=notify\nExecStart=/data/tailscale/bin/tailscaled --statedir=/data/tailscale/state --state=/data/tailscale/state/tailscaled.state --socket=/run/tailscale/tailscaled.sock --port=41641\nExecStopPost=/data/tailscale/bin/tailscaled --cleanup\nRestart=on-failure\nRestartSec=5\nRuntimeDirectory=tailscale\nRuntimeDirectoryMode=0755\nNice=10\n\n# Deliberately no WantedBy: only the boot +90s timer starts this service.\n'})
+    main({'login.sh': '#!/usr/bin/env bash\nset -eu\nif (( EUID != 0 )); then\n  exec sudo -n /usr/bin/bash "$0" "$@"\nfi\nhost_name=${1:-$(hostname)}\n# Ordinary OpenSSH stays in use. Do not change DNS or accept subnet routes.\nexec /data/tailscale/bin/tailscale --socket=/run/tailscale/tailscaled.sock up --accept-dns=false --accept-routes=false --hostname="$host_name" --timeout=30s\n', 'start.sh': '#!/usr/bin/env bash\n# Background bootstrap: openpilot must not wait for network setup.\nset -eu\nif (( EUID != 0 )); then\n  exec sudo -n /usr/bin/bash "$0" "$@"\nfi\nexec 9>/run/openpilot-tailscale-bootstrap.lock\nflock -n 9 || exit 0\nsystemctl link --runtime /data/tailscale/tailscaled.service /data/tailscale/tailscaled-delay.timer\nsystemctl start --no-block tailscaled-delay.timer\n', 'tailscaled-delay.timer': '[Unit]\nDescription=Start Tailscale at boot +90 seconds\n\n[Timer]\nOnBootSec=90s\nAccuracySec=1s\nUnit=tailscaled.service\n', 'tailscaled.service': '[Unit]\nDescription=Tailscale for openpilot\nAfter=network.target NetworkManager.service\nWants=network.target\n\n[Service]\nEnvironment="PATH=/data/tailscale/compat:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"\nType=notify\nExecStart=/data/tailscale/bin/tailscaled --statedir=/data/tailscale/state --state=/data/tailscale/state/tailscaled.state --socket=/run/tailscale/tailscaled.sock --port=41641\nExecStopPost=/data/tailscale/bin/tailscaled --cleanup\nRestart=on-failure\nRestartSec=5\nRuntimeDirectory=tailscale\nRuntimeDirectoryMode=0755\nNice=10\n\n# Deliberately no WantedBy: only the boot +90s timer starts this service.\n'})
 except Exception as error:
     print('Installation failed: ' + str(error), file=sys.stderr)
     sys.exit(1)

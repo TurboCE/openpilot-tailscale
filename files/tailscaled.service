@@ -4,6 +4,7 @@ After=network.target NetworkManager.service
 Wants=network.target
 
 [Service]
+Environment="PATH=/data/tailscale/compat:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 Type=notify
 ExecStart=/data/tailscale/bin/tailscaled --statedir=/data/tailscale/state --state=/data/tailscale/state/tailscaled.state --socket=/run/tailscale/tailscaled.sock --port=41641
 ExecStopPost=/data/tailscale/bin/tailscaled --cleanup

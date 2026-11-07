@@ -69,3 +69,5 @@ for f in install.sh files/start.sh files/login.sh; do bash -n "$f" || exit; done
 공식 자료: [Linux/static 설치](https://tailscale.com/docs/install/linux), [공식 패키지·체크섬](https://dl.tailscale.com/stable/), [tailscale up 옵션](https://tailscale.com/docs/reference/tailscale-cli/up).
 
 실기 확인: AGNOS 18.4 / CarrotPilot `bb454a2`에서 설치 성공, 서비스 active 및 `OnBootUSec=1min 30s` 확인. 시작 훅 보존·중복 방지 등 단위 테스트 5개 통과. 실제 재부팅 후 시작 시각 검증은 아직 수행하지 않았습니다.
+
+AGNOS의 nft 프런트엔드가 커널과 호환되지 않을 경우 읽기 전용 검사로 확인한 뒤, Tailscale 서비스의 PATH에만 동작하는 iptables-legacy/ip6tables-legacy를 연결합니다. 시스템 alternatives 및 기존 방화벽 정책은 변경하지 않습니다. 이미 실행 중인 서비스를 이 변경으로 갱신하려면 LAN에서 `sudo systemctl restart tailscaled.service`를 실행하거나 다음 부팅을 기다리세요.

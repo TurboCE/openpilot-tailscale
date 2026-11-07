@@ -157,6 +157,25 @@ def install(assets):
                 os.replace(str(stage / name), str(release / name))
                 meta[name + "_sha256"] = digest(release / name)
             atomic_write(manifest_path, json.dumps(meta, indent=2))
+    # AGNOS 18.4 can ship nft frontends with a kernel lacking nf_tables.
+    # Select legacy tools for this service only, after read-only probes.
+    compat = BASE / "compat"
+    compat.mkdir(exist_ok=True)
+    for name in ("iptables", "ip6tables"):
+        target = compat / name
+        legacy = shutil.which(name + "-legacy")
+        default = shutil.which(name)
+        if (default and legacy and
+                run(default, "-t", "filter", "-S", check=False).returncode != 0 and
+                run(legacy, "-t", "filter", "-S", check=False).returncode == 0):
+            if target.is_symlink():
+                target.unlink()
+            if target.exists():
+                raise RuntimeError("Unexpected compatibility file: " + str(target))
+            target.symlink_to(legacy)
+            print("Using service-local legacy firewall frontend:", name)
+        elif target.is_symlink():
+            target.unlink()
     (BASE / "bin").mkdir(exist_ok=True)
     (BASE / "state").mkdir(mode=0o700, exist_ok=True)
     (BASE / "state").chmod(0o700)
