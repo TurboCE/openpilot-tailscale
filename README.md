@@ -18,6 +18,18 @@ sudo /data/tailscale/login.sh trailblazer
 
 30초 안에 로그인이 끝나지 않아 명령이 timeout으로 종료돼도, 표시된 로그인 링크에서 인증 후 다시 상태를 확인할 수 있습니다. 기존 로그인 상태는 재설치 시 유지합니다. API 키나 Tailscale 로그인 키는 이 저장소에 포함하지 않습니다.
 
+## 팩토리리셋 후 재설치와 기기 중복 등록
+
+팩토리리셋 후 openpilot을 설치하고 인터넷에 연결한 다음, 위 설치 한 줄을 다시 실행하면 됩니다. `/data/tailscale/state`가 남아 있다면 기존 인증 정보를 재사용합니다. 이 폴더까지 삭제됐다면 `sudo /data/tailscale/login.sh trailblazer`로 다시 인증해야 합니다.
+
+상태가 삭제된 뒤 재인증하면 새 기기로 등록될 수 있습니다. 같은 `trailblazer` 이름을 지정해도 기존 기기를 자동으로 대체하지 않습니다. 기존 기기는 초기화나 앱 제거만으로 Tailscale 관리 화면에서 자동 삭제되지 않으므로, 반복하면 사용하지 않는 기기가 남을 수 있습니다.
+
+중복 등록을 정리하려면 [Tailscale Machines](https://login.tailscale.com/admin/machines)에서 기존 IP·마지막 연결 시각을 확인하고, 초기화 전의 사용하지 않는 항목만 Remove하세요. 현재 접속 중인 새 기기와 혼동하지 마세요. 초기화 전에 기존 기기를 지워도 됩니다. 이 설치 스크립트는 관리 API 자격 증명을 요구하거나 다른 기기를 자동 삭제하지 않습니다.
+
+같은 기기 신원을 재사용하려면 초기화 전에 서비스가 정지한 상태의 `/data/tailscale/state`를 기기 밖의 비공개 위치에 백업하고, 재설치 후 서비스가 정지한 상태에서 원래 위치로 복원하는 방법이 있습니다. 키·인증 정보가 포함되므로 GitHub에 올리거나 다른 기기에 복제하지 마세요. 원래 기기가 관리 화면에서 삭제되거나 키가 무효화된 경우에는 복원해도 재인증이 필요할 수 있습니다. 이 저장소의 한 줄 설치는 백업·복원을 자동 수행하지 않습니다.
+
+참고: [공식 기기 삭제 안내](https://tailscale.com/docs/features/access-control/device-management/how-to/remove), [공식 상태 초기화 안내](https://tailscale.com/docs/features/client/uninstall).
+
 ## 동작
 
 - 고정 Tailscale 버전: **1.104.5**, 공식 다운로드 `dl.tailscale.com`, 고정 SHA-256으로 검증. ARM64 AGNOS 기기 대상입니다.
