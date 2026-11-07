@@ -1,0 +1,16 @@
+[Unit]
+Description=Tailscale for openpilot
+After=network.target NetworkManager.service
+Wants=network.target
+
+[Service]
+Type=notify
+ExecStart=/data/tailscale/bin/tailscaled --statedir=/data/tailscale/state --state=/data/tailscale/state/tailscaled.state --socket=/run/tailscale/tailscaled.sock --port=41641
+ExecStopPost=/data/tailscale/bin/tailscaled --cleanup
+Restart=on-failure
+RestartSec=5
+RuntimeDirectory=tailscale
+RuntimeDirectoryMode=0755
+Nice=10
+
+# Deliberately no WantedBy: only the boot +90s timer starts this service.

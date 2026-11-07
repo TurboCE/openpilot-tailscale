@@ -1,0 +1,10 @@
+--- a/data/continue.sh
++++ b/data/continue.sh
+@@ -1,4 +1,7 @@
+ #!/usr/bin/env bash
++# BEGIN TurboCE/openpilot-tailscale
++/data/tailscale/start.sh >> /data/tailscale-start.log 2>&1 &
++# END TurboCE/openpilot-tailscale
+ 
+ cd /data/openpilot
+ exec ./launch_openpilot.sh
